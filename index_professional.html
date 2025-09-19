@@ -1,0 +1,2175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoratis - Professional Journaling & Learning Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        :root {
+            --neon-violet: #8A2BE2;
+            --neon-blue: #00BFFF;
+            --bg-black: #0A0A0A;
+            --bg-sidebar: #121212;
+            --bg-card: #1A1A1A;
+            --border-color: #2D2D2D;
+            --success-green: #10B981;
+            --warning-orange: #F59E0B;
+            --error-red: #EF4444;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-black);
+            color: #E0E0E0;
+        }
+        .sidebar { 
+            background: linear-gradient(180deg, var(--bg-sidebar) 0%, #0F0F0F 100%);
+            border-right: 1px solid var(--border-color); 
+        }
+        .main-content { background-color: var(--bg-black); }
+        .nav-link.active { 
+            background: linear-gradient(90deg, var(--neon-violet) 0%, #9333EA 100%);
+            color: white; 
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.3);
+        }
+        .nav-link:hover:not(.active) { 
+            background-color: var(--bg-card); 
+            transform: translateX(4px);
+            transition: all 0.2s ease;
+        }
+        .glow-violet { box-shadow: 0 0 25px -5px rgba(138, 43, 226, 0.6); }
+        .glow-blue { box-shadow: 0 0 25px -5px rgba(0, 191, 255, 0.4); }
+        .journal-card, .folder-card, .video-card { 
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .journal-card:hover, .folder-card:hover, .video-card:hover { 
+            border-color: var(--neon-blue); 
+            transform: translateY(-4px); 
+            box-shadow: 0 8px 25px rgba(0, 191, 255, 0.2);
+        }
+        .create-card {
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.1) 0%, rgba(0, 191, 255, 0.1) 100%);
+            border: 2px dashed var(--border-color);
+            transition: all 0.3s ease;
+        }
+        .create-card:hover {
+            border-color: var(--neon-violet);
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.2) 0%, rgba(0, 191, 255, 0.2) 100%);
+            transform: translateY(-2px);
+        }
+        .stats-card {
+            background: linear-gradient(135deg, var(--bg-card) 0%, #252525 100%);
+            border: 1px solid var(--border-color);
+        }
+        .search-input {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        .search-input:focus {
+            border-color: var(--neon-violet);
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.3);
+        }
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+        .tag {
+            background: linear-gradient(90deg, var(--neon-violet) 0%, #9333EA 100%);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            display: inline-block;
+        }
+        .loading-spinner {
+            border: 2px solid var(--border-color);
+            border-top: 2px solid var(--neon-violet);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 500;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+        .toast.success { background: var(--success-green); }
+        .toast.error { background: var(--error-red); }
+        .toast.warning { background: var(--warning-orange); }
+        
+        /* Scrollbar customization */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { 
+            background: var(--border-color); 
+            border-radius: 3px; 
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-violet); }
+        
+        /* Animation classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        /* Enhanced Glowing Chat Input Effects */
+        .chat-glow {
+            position: relative;
+        }
+        
+        .chat-glow::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #ff0066, #ff6600, #ffff00, #66ff00, #00ffff, #0066ff, #6600ff, #ff0066);
+            background-size: 400% 400%;
+            border-radius: 16px;
+            filter: blur(10px);
+            animation: rainbow-glow 4s ease-in-out infinite;
+            opacity: 0.4;
+            z-index: -1;
+        }
+        
+        .chat-glow:hover::before {
+            opacity: 0.7;
+            animation: rainbow-glow 2s ease-in-out infinite;
+        }
+        
+        .chat-input-focused::before {
+            opacity: 0.9 !important;
+            animation: rainbow-glow 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes rainbow-glow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        /* Pulse glow effect for chat container */
+        .pulse-glow {
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 
+                    0 0 20px rgba(147, 51, 234, 0.3),
+                    0 0 40px rgba(59, 130, 246, 0.2),
+                    0 0 60px rgba(147, 51, 234, 0.1);
+            }
+            50% {
+                box-shadow: 
+                    0 0 30px rgba(147, 51, 234, 0.5),
+                    0 0 60px rgba(59, 130, 246, 0.4),
+                    0 0 90px rgba(147, 51, 234, 0.3);
+            }
+        }
+        
+        /* Shimmer effect for quick prompts */
+        .shimmer:hover {
+            background: linear-gradient(90deg, rgba(147, 51, 234, 0.1) 0%, rgba(59, 130, 246, 0.2) 50%, rgba(147, 51, 234, 0.1) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+    </style>
+</head>
+<body class="text-gray-300">
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="sidebar w-72 flex-shrink-0 flex flex-col p-6 space-y-6">
+            <!-- User Profile -->
+            <div class="flex items-center space-x-3 p-4 bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-xl border border-purple-800/30">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg">
+                    L
+                </div>
+                <div>
+                    <h1 class="text-lg font-semibold text-white">Lenin</h1>
+                    <p class="text-sm text-gray-400" id="user-stats">Loading stats...</p>
+                </div>
+            </div>
+            
+            <!-- Search -->
+            <div class="relative">
+                <input type="text" id="global-search" placeholder="Search everything..." 
+                       class="search-input w-full rounded-lg px-4 py-3 pl-12 text-sm focus:outline-none">
+                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="space-y-2">
+                <a href="#" id="home-nav" class="nav-link active flex items-center space-x-3 px-4 py-3 rounded-lg transition-all">
+                    <i data-lucide="home" class="w-5 h-5"></i>
+                    <span class="font-medium">Home</span>
+                </a>
+                <a href="#" id="vault-nav" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 transition-all">
+                    <i data-lucide="video" class="w-5 h-5"></i>
+                    <span class="font-medium">Video Vault</span>
+                </a>
+                <a href="#" id="scoratis-nav" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 transition-all">
+                    <i data-lucide="message-circle" class="w-5 h-5"></i>
+                    <span class="font-medium">Scoratis AI</span>
+                </a>
+                <a href="#" id="trash-nav" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 transition-all">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    <span class="font-medium">Trash</span>
+                </a>
+                <a href="#" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-400 transition-all">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                    <span class="font-medium">Settings</span>
+                </a>
+            </nav>
+            
+            <!-- Chat History (shown only when on Scoratis AI) -->
+            <div id="chat-history-section" class="hidden space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wide">Recent Chats</h3>
+                    <div class="flex space-x-2">
+                        <button id="refresh-chats-btn" class="text-gray-400 hover:text-gray-300 transition-colors" title="Refresh">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        </button>
+                        <button id="new-chat-btn" class="text-purple-400 hover:text-purple-300 transition-colors" title="New Chat">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="conversation-list" class="space-y-2 max-h-80 overflow-y-auto">
+                    <!-- Conversation items will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="stats-card p-4 rounded-xl space-y-3">
+                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wide">Quick Stats</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="text-center">
+                        <div class="text-xl font-bold text-white" id="stat-journals">0</div>
+                        <div class="text-xs text-gray-400">Journals</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-xl font-bold text-white" id="stat-folders">0</div>
+                        <div class="text-xs text-gray-400">Folders</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex-grow"></div>
+            
+            <!-- User Profile Menu -->
+            <div class="relative">
+                <button id="user-profile-btn" class="w-full flex items-center justify-between p-3 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors" onclick="console.log('INLINE CLICK WORKING!')">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-sm">
+                            L
+                        </div>
+                        <div class="text-left">
+                            <div class="text-white font-medium text-sm">Lenin</div>
+                            <div class="text-gray-400 text-xs">Free</div>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-up" class="w-4 h-4 text-gray-400 transition-transform duration-200" id="profile-chevron"></i>
+                </button>
+                
+                <!-- User Menu Dropdown -->
+                <div id="user-menu-dropdown" class="absolute bottom-full left-0 right-0 mb-2 bg-gray-800 rounded-lg border border-gray-700 shadow-xl hidden">
+                    <div class="p-2 space-y-1">
+                        <button id="settings-btn" class="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors text-left">
+                            <i data-lucide="settings" class="w-4 h-4"></i>
+                            <span class="text-sm">Settings</span>
+                        </button>
+                        <button id="join-discord-btn" class="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors text-left">
+                            <i data-lucide="message-circle" class="w-4 h-4"></i>
+                            <span class="text-sm">Join Discord</span>
+                        </button>
+                        <button id="refer-friend-btn" class="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors text-left">
+                            <i data-lucide="user-plus" class="w-4 h-4"></i>
+                            <span class="text-sm">Refer a Friend</span>
+                            <span class="ml-auto bg-green-500 text-white text-xs px-2 py-1 rounded">0</span>
+                        </button>
+                        <button id="send-feedback-btn" class="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors text-left">
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                            <span class="text-sm">Send Feedback</span>
+                        </button>
+                        <hr class="border-gray-700 my-1">
+                        <button id="logout-btn" class="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors text-left">
+                            <i data-lucide="log-out" class="w-4 h-4"></i>
+                            <span class="text-sm">Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content flex-1 flex flex-col overflow-hidden">
+            <!-- Home View -->
+            <div id="home-view" class="h-full overflow-y-auto">
+                <!-- Header -->
+                <div class="p-8 border-b border-gray-800">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h1 class="text-4xl font-bold text-white mb-2">Welcome back, Lenin</h1>
+                            <p class="text-gray-400">Continue your journey of learning and self-discovery</p>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button id="new-journal-btn" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center space-x-2">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>New Journal</span>
+                            </button>
+                            <button id="new-folder-btn" class="px-6 py-3 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors flex items-center space-x-2">
+                                <i data-lucide="folder-plus" class="w-4 h-4"></i>
+                                <span>New Folder</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Tabs -->
+                    <div class="flex space-x-6">
+                        <button class="filter-btn pb-3 border-b-2 border-purple-500 text-white font-medium" data-filter="all">All Content</button>
+                        <button class="filter-btn pb-3 text-gray-400 hover:text-white transition-colors" data-filter="recent">Recent</button>
+                        <button class="filter-btn pb-3 text-gray-400 hover:text-white transition-colors" data-filter="shared">Shared</button>
+                        <button class="filter-btn pb-3 text-gray-400 hover:text-white transition-colors" data-filter="favorites">Favorites</button>
+                    </div>
+                </div>
+                
+                <!-- Content -->
+                <div class="p-8 space-y-12">
+                    <!-- Folders Section -->
+                    <section class="fade-in">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-semibold text-white flex items-center space-x-2">
+                                <i data-lucide="folder" class="w-6 h-6 text-purple-500"></i>
+                                <span>Folders</span>
+                            </h2>
+                            <button class="text-gray-400 hover:text-white transition-colors">
+                                <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <div id="folders-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+                            <!-- Create Folder Card -->
+                            <div class="create-card folder-card flex flex-col items-center justify-center p-6 rounded-xl text-gray-400 hover:text-white cursor-pointer transition-all h-32">
+                                <i data-lucide="folder-plus" class="w-8 h-8 mb-2"></i>
+                                <span class="text-sm font-medium">Create Folder</span>
+                            </div>
+                            <!-- Folders will be inserted here -->
+                        </div>
+                    </section>
+                    
+                    <!-- Journals Section -->
+                    <section class="fade-in">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-semibold text-white flex items-center space-x-2">
+                                <i data-lucide="book-open" class="w-6 h-6 text-blue-500"></i>
+                                <span>Recent Journals</span>
+                            </h2>
+                            <div class="flex items-center space-x-4">
+                                <select id="sort-journals" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white">
+                                    <option value="updated_at">Last Modified</option>
+                                    <option value="created_at">Date Created</option>
+                                    <option value="title">Title</option>
+                                </select>
+                                <button class="text-gray-400 hover:text-white transition-colors">
+                                    <i data-lucide="grid-3x3" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="journals-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <!-- Create Journal Card -->
+                            <div class="create-card journal-card flex flex-col items-center justify-center p-8 rounded-xl text-gray-400 hover:text-white cursor-pointer transition-all min-h-48">
+                                <i data-lucide="plus-circle" class="w-12 h-12 mb-3"></i>
+                                <span class="text-lg font-medium mb-1">Create Journal</span>
+                                <span class="text-sm text-gray-500">Start your next entry</span>
+                            </div>
+                            <!-- Journals will be inserted here -->
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Video Vault View -->
+            <div id="vault-view" class="hidden h-full overflow-y-auto">
+                <!-- Video Vault Content Will Go Here -->
+                <div class="p-8">
+                    <h1 class="text-3xl font-bold text-white mb-4">Video Vault</h1>
+                    <p class="text-gray-400">Enhanced video interface coming soon...</p>
+                </div>
+            </div>
+
+            <!-- Trash View -->
+            <div id="trash-view" class="hidden h-full overflow-y-auto">
+                <!-- Header -->
+                <div class="p-8 border-b border-gray-800">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h1 class="text-4xl font-bold text-white mb-2 flex items-center space-x-3">
+                                <i data-lucide="trash-2" class="w-8 h-8 text-red-500"></i>
+                                <span>Trash</span>
+                            </h1>
+                            <p class="text-gray-400">Deleted conversations will be permanently removed after 30 days</p>
+                        </div>
+                        <button id="empty-trash-btn" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2">
+                            <i data-lucide="trash" class="w-4 h-4"></i>
+                            <span>Empty Trash</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Search -->
+                    <div class="relative max-w-md">
+                        <input type="text" id="trash-search" placeholder="Search deleted conversations..." 
+                               class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 pl-12 text-white focus:outline-none focus:border-purple-500 transition-colors">
+                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                    </div>
+                </div>
+                
+                <!-- Trash Content -->
+                <div class="p-8">
+                    <div id="trash-conversations" class="space-y-4">
+                        <!-- Trash conversations will be inserted here -->
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div id="trash-empty-state" class="hidden text-center py-16">
+                        <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gray-800 flex items-center justify-center">
+                            <i data-lucide="trash-2" class="w-12 h-12 text-gray-500"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-white mb-2">Trash is empty</h3>
+                        <p class="text-gray-400">Deleted conversations will appear here</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scoratis Chat View -->
+            <div id="scoratis-view" class="hidden h-full flex flex-col bg-gradient-to-br from-gray-900 via-black to-gray-900">
+                <!-- Chat Messages Area -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <div id="chat-messages" class="space-y-4 max-w-4xl mx-auto">
+                        <!-- Welcome Message -->
+                        <div class="flex items-start space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="sparkles" class="w-4 h-4 text-white"></i>
+                            </div>
+                            <div class="bg-gray-800 rounded-2xl rounded-tl-md p-4 max-w-2xl">
+                                <p class="text-gray-300">Welcome to Scoratis AI! I'm here to help you with Socratic questioning, learning guidance, and deep reflection. What would you like to explore today?</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Input Area -->
+                <div class="p-6 border-t border-gray-800">
+                    <div class="max-w-4xl mx-auto">
+                        <!-- Main Chat Input with Glowing Effect -->
+                        <div class="relative chat-glow pulse-glow">
+                            <div class="relative">
+                                <div id="chat-input-container" class="flex items-center bg-gray-900 border-2 border-purple-500/30 rounded-2xl p-4 space-x-4 hover:border-purple-500/50 transition-all duration-300 group shadow-2xl shadow-purple-500/20">
+                                    <div class="flex-shrink-0">
+                                        <i data-lucide="search" class="w-5 h-5 text-purple-400"></i>
+                                    </div>
+                                    <input 
+                                        id="chat-input" 
+                                        type="text" 
+                                        placeholder="Ask me anything... What concepts would you like to explore?"
+                                        class="flex-1 bg-transparent text-white placeholder-gray-400 outline-none text-lg font-medium"
+                                        autocomplete="off"
+                                    >
+                                    <button id="chat-send" class="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <i data-lucide="send" class="w-5 h-5 text-white"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Action Buttons -->
+                        <div class="flex flex-wrap gap-2 mt-4 justify-center">
+                            <button class="quick-prompt shimmer px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-full text-sm transition-all duration-300 border border-gray-700 hover:border-purple-500/30 hover:text-white hover:shadow-lg hover:shadow-purple-500/20" data-prompt="Help me understand a complex concept">
+                                💡 Explain a concept
+                            </button>
+                            <button class="quick-prompt shimmer px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-full text-sm transition-all duration-300 border border-gray-700 hover:border-purple-500/30 hover:text-white hover:shadow-lg hover:shadow-purple-500/20" data-prompt="Guide me through problem-solving">
+                                🧩 Problem solving
+                            </button>
+                            <button class="quick-prompt shimmer px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-full text-sm transition-all duration-300 border border-gray-700 hover:border-purple-500/30 hover:text-white hover:shadow-lg hover:shadow-purple-500/20" data-prompt="Help me reflect on my learning">
+                                🤔 Reflection
+                            </button>
+                            <button class="quick-prompt shimmer px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-full text-sm transition-all duration-300 border border-gray-700 hover:border-purple-500/30 hover:text-white hover:shadow-lg hover:shadow-purple-500/20" data-prompt="Ask me Socratic questions">
+                                ❓ Socratic questions
+                            </button>
+                        </div>
+
+                        <!-- Typing Indicator -->
+                        <div id="typing-indicator" class="hidden flex items-center space-x-2 mt-4 text-gray-400">
+                            <div class="flex space-x-1">
+                                <div class="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
+                                <div class="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
+                                <div class="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+                            </div>
+                            <span class="text-sm">Scoratis AI is thinking...</span>
+                        </div>
+
+                        <!-- Clear Conversation Button -->
+                        <div class="flex justify-center mt-4">
+                            <button id="clear-chat" class="px-4 py-2 text-xs text-gray-500 hover:text-gray-300 transition-colors flex items-center space-x-2">
+                                <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                                <span>Start New Conversation</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Journal Modal -->
+    <div id="journal-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center hidden z-50">
+        <div class="bg-gray-900 rounded-2xl w-full max-w-4xl mx-4 border border-gray-700 shadow-2xl">
+            <div class="p-6 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-2xl font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="edit-3" class="w-6 h-6 text-purple-500"></i>
+                    <span id="journal-modal-title">Create New Journal</span>
+                </h3>
+                <button id="close-journal-modal" class="text-gray-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-gray-300 text-sm font-medium mb-2">Title</label>
+                        <input id="journal-title" type="text" 
+                               class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors" 
+                               placeholder="Enter your journal title">
+                    </div>
+                    <div>
+                        <label class="block text-gray-300 text-sm font-medium mb-2">Folder</label>
+                        <select id="journal-folder" 
+                                class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors">
+                            <option value="">No folder</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-gray-300 text-sm font-medium mb-2">Content</label>
+                    <textarea id="journal-content" rows="8" 
+                              class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors resize-none" 
+                              placeholder="What's on your mind today?"></textarea>
+                </div>
+                <div>
+                    <label class="block text-gray-300 text-sm font-medium mb-2">Tags</label>
+                    <input id="journal-tags" type="text" 
+                           class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors" 
+                           placeholder="Add tags separated by commas (e.g., reflection, learning, goals)">
+                </div>
+                <div class="flex justify-end space-x-4 pt-4">
+                    <button id="cancel-journal" 
+                            class="px-6 py-3 text-gray-300 hover:text-white rounded-lg border border-gray-600 hover:border-gray-500 transition-colors">
+                        Cancel
+                    </button>
+                    <button id="save-journal" 
+                            class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center space-x-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        <span>Save Journal</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center hidden z-50">
+        <div class="bg-gray-900 rounded-2xl w-full max-w-2xl mx-4 border border-gray-700 shadow-2xl">
+            <div class="p-6 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-2xl font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="settings" class="w-6 h-6 text-purple-500"></i>
+                    <span>Settings</span>
+                </h3>
+                <button id="close-settings-modal" class="text-gray-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <h4 class="text-lg font-semibold text-white">Appearance</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-gray-300 text-sm font-medium mb-2">Theme</label>
+                                <div class="flex space-x-2">
+                                    <button class="theme-btn px-3 py-2 rounded bg-gray-800 text-white border border-purple-500" data-theme="dark">Dark</button>
+                                    <button class="theme-btn px-3 py-2 rounded bg-gray-700 text-gray-300 border border-gray-600" data-theme="light">Light</button>
+                                    <button class="theme-btn px-3 py-2 rounded bg-gray-700 text-gray-300 border border-gray-600" data-theme="system">System</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-gray-300 text-sm font-medium mb-2">Language</label>
+                                <select class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                    <option value="en">English</option>
+                                    <option value="es">Español</option>
+                                    <option value="fr">Français</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <h4 class="text-lg font-semibold text-white">Preferences</h4>
+                        <div class="space-y-3">
+                            <label class="flex items-center space-x-3">
+                                <input type="checkbox" checked class="w-4 h-4 rounded border-gray-600 text-purple-600 focus:ring-purple-500">
+                                <span class="text-gray-300">Auto-save conversations</span>
+                            </label>
+                            <label class="flex items-center space-x-3">
+                                <input type="checkbox" checked class="w-4 h-4 rounded border-gray-600 text-purple-600 focus:ring-purple-500">
+                                <span class="text-gray-300">Show notifications</span>
+                            </label>
+                            <label class="flex items-center space-x-3">
+                                <input type="checkbox" class="w-4 h-4 rounded border-gray-600 text-purple-600 focus:ring-purple-500">
+                                <span class="text-gray-300">Analytics & usage data</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button id="cancel-settings" class="px-6 py-3 text-gray-300 hover:text-white rounded-lg border border-gray-600 hover:border-gray-500 transition-colors">
+                        Cancel
+                    </button>
+                    <button id="save-settings" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:opacity-90 transition-opacity">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div id="feedback-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center hidden z-50">
+        <div class="bg-gray-900 rounded-2xl w-full max-w-lg mx-4 border border-gray-700 shadow-2xl">
+            <div class="p-6 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="send" class="w-5 h-5 text-purple-500"></i>
+                    <span>Send Feedback</span>
+                </h3>
+                <button id="close-feedback-modal" class="text-gray-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-gray-300 text-sm font-medium mb-2">Feedback Type</label>
+                    <select id="feedback-type" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        <option value="bug">Bug Report</option>
+                        <option value="feature">Feature Request</option>
+                        <option value="improvement">Improvement</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-300 text-sm font-medium mb-2">Your Feedback</label>
+                    <textarea id="feedback-message" rows="6" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white resize-none" placeholder="Tell us what you think..."></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button id="cancel-feedback" class="px-4 py-2 text-gray-300 hover:text-white rounded-lg border border-gray-600 hover:border-gray-500 transition-colors">
+                        Cancel
+                    </button>
+                    <button id="send-feedback" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:opacity-90 transition-opacity">
+                        Send Feedback
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Refer Friend Modal -->
+    <div id="refer-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center hidden z-50">
+        <div class="bg-gray-900 rounded-2xl w-full max-w-lg mx-4 border border-gray-700 shadow-2xl">
+            <div class="p-6 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="user-plus" class="w-5 h-5 text-purple-500"></i>
+                    <span>Refer a Friend</span>
+                </h3>
+                <button id="close-refer-modal" class="text-gray-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-gray-300">Share Scoratis with your friends and earn rewards!</p>
+                <div>
+                    <label class="block text-gray-300 text-sm font-medium mb-2">Your Referral Link</label>
+                    <div class="flex space-x-2">
+                        <input id="referral-link" type="text" readonly value="https://scoratis.com/ref/lenin123" class="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                        <button id="copy-referral" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-4">
+                    <h4 class="text-white font-medium mb-2">Referral Stats</h4>
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                            <div class="text-2xl font-bold text-purple-400">0</div>
+                            <div class="text-xs text-gray-400">Friends Joined</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-green-400">$0</div>
+                            <div class="text-xs text-gray-400">Rewards Earned</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button id="close-refer" class="px-4 py-2 text-gray-300 hover:text-white rounded-lg border border-gray-600 hover:border-gray-500 transition-colors">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Folder Modal -->
+    <div id="folder-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center hidden z-50">
+        <div class="bg-gray-900 rounded-2xl w-full max-w-lg mx-4 border border-gray-700 shadow-2xl">
+            <div class="p-6 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="folder-plus" class="w-5 h-5 text-purple-500"></i>
+                    <span>Create New Folder</span>
+                </h3>
+                <button id="close-folder-modal" class="text-gray-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-gray-300 text-sm font-medium mb-2">Folder Name</label>
+                    <input id="folder-name" type="text" 
+                           class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors" 
+                           placeholder="Enter folder name">
+                </div>
+                <div>
+                    <label class="block text-gray-300 text-sm font-medium mb-2">Description (Optional)</label>
+                    <textarea id="folder-description" rows="3" 
+                              class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors resize-none" 
+                              placeholder="What will you store in this folder?"></textarea>
+                </div>
+                <div>
+                    <label class="block text-gray-300 text-sm font-medium mb-2">Color</label>
+                    <div class="flex space-x-3">
+                        <button class="color-option w-8 h-8 rounded-full bg-purple-500 border-2 border-purple-500" data-color="#8A2BE2"></button>
+                        <button class="color-option w-8 h-8 rounded-full bg-blue-500 border-2 border-transparent hover:border-blue-400" data-color="#00BFFF"></button>
+                        <button class="color-option w-8 h-8 rounded-full bg-green-500 border-2 border-transparent hover:border-green-400" data-color="#10B981"></button>
+                        <button class="color-option w-8 h-8 rounded-full bg-orange-500 border-2 border-transparent hover:border-orange-400" data-color="#F59E0B"></button>
+                        <button class="color-option w-8 h-8 rounded-full bg-red-500 border-2 border-transparent hover:border-red-400" data-color="#EF4444"></button>
+                        <button class="color-option w-8 h-8 rounded-full bg-pink-500 border-2 border-transparent hover:border-pink-400" data-color="#EC4899"></button>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button id="cancel-folder" 
+                            class="px-6 py-3 text-gray-300 hover:text-white rounded-lg border border-gray-600 hover:border-gray-500 transition-colors">
+                        Cancel
+                    </button>
+                    <button id="save-folder" 
+                            class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center space-x-2">
+                        <i data-lucide="folder-plus" class="w-4 h-4"></i>
+                        <span>Create Folder</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Application state
+        const APP_STATE = {
+            currentView: 'home',
+            currentFilter: 'all',
+            folders: [],
+            journals: [],
+            stats: {},
+            selectedFolderColor: '#8A2BE2'
+        };
+        
+        // API base URL
+        const API_BASE = 'http://127.0.0.1:5001';
+        
+        // Initialize app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initializeApp);
+        
+        async function initializeApp() {
+            console.log('🚀 Initializing Scoratis Professional...');
+            
+            // Initialize event listeners
+            initializeEventListeners();
+            
+            // Initialize chat functionality
+            initializeChat();
+            
+            // Initialize user profile menu (delay to ensure DOM is ready)
+            setTimeout(() => {
+                initializeUserProfileMenu();
+            }, 100);
+            
+            // Load initial data
+            await Promise.all([
+                loadStats(),
+                loadFolders(),
+                loadJournals()
+            ]);
+            
+            // Initialize UI
+            updateUI();
+            
+            console.log('✅ Scoratis Professional initialized successfully');
+        }
+        
+        function initializeEventListeners() {
+            // Navigation
+            document.getElementById('home-nav').addEventListener('click', () => switchView('home'));
+            document.getElementById('vault-nav').addEventListener('click', () => switchView('vault'));
+            document.getElementById('scoratis-nav').addEventListener('click', () => switchView('scoratis'));
+            document.getElementById('trash-nav').addEventListener('click', () => switchView('trash'));
+            
+            // Modals
+            document.getElementById('new-journal-btn').addEventListener('click', openJournalModal);
+            document.getElementById('new-folder-btn').addEventListener('click', openFolderModal);
+            document.getElementById('close-journal-modal').addEventListener('click', closeJournalModal);
+            document.getElementById('close-folder-modal').addEventListener('click', closeFolderModal);
+            document.getElementById('cancel-journal').addEventListener('click', closeJournalModal);
+            document.getElementById('cancel-folder').addEventListener('click', closeFolderModal);
+            document.getElementById('save-journal').addEventListener('click', saveJournal);
+            document.getElementById('save-folder').addEventListener('click', saveFolder);
+            
+            // Filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => setFilter(e.target.dataset.filter));
+            });
+            
+            // Color picker for folders
+            document.querySelectorAll('.color-option').forEach(btn => {
+                btn.addEventListener('click', (e) => selectFolderColor(e.target.dataset.color));
+            });
+            
+            // Search
+            document.getElementById('global-search').addEventListener('input', debounce(handleGlobalSearch, 300));
+            
+            // Sort
+            document.getElementById('sort-journals').addEventListener('change', sortJournals);
+        }
+        
+        // ==================== API FUNCTIONS ====================
+        
+        async function apiCall(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API call failed:', error);
+                showToast(`Error: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+        
+        async function loadStats() {
+            try {
+                const stats = await apiCall('/stats');
+                APP_STATE.stats = stats;
+                updateStatsDisplay();
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+        
+        async function loadFolders() {
+            try {
+                const folders = await apiCall('/folders');
+                APP_STATE.folders = folders;
+                renderFolders();
+            } catch (error) {
+                console.error('Failed to load folders:', error);
+            }
+        }
+        
+        async function loadJournals() {
+            try {
+                const journals = await apiCall('/journals');
+                APP_STATE.journals = journals;
+                renderJournals();
+            } catch (error) {
+                console.error('Failed to load journals:', error);
+            }
+        }
+        
+        // ==================== UI FUNCTIONS ====================
+        
+        function switchView(view) {
+            // Update navigation
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            document.getElementById(`${view}-nav`).classList.add('active');
+            
+            // Update views
+            document.querySelectorAll('[id$="-view"]').forEach(v => v.classList.add('hidden'));
+            document.getElementById(`${view}-view`).classList.remove('hidden');
+            
+            // Show/hide chat history section and handle special views
+            const chatHistorySection = document.getElementById('chat-history-section');
+            if (view === 'scoratis') {
+                console.log('Switching to Scoratis view, loading conversation history...');
+                chatHistorySection.classList.remove('hidden');
+                loadConversationHistory();
+            } else {
+                chatHistorySection.classList.add('hidden');
+            }
+            
+            // Load trash conversations when switching to trash view
+            if (view === 'trash') {
+                loadTrashConversations();
+            }
+            
+            APP_STATE.currentView = view;
+        }
+        
+        function setFilter(filter) {
+            APP_STATE.currentFilter = filter;
+            
+            // Update filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('border-purple-500', 'text-white');
+                btn.classList.add('text-gray-400');
+            });
+            
+            const activeBtn = document.querySelector(`[data-filter="${filter}"]`);
+            activeBtn.classList.remove('text-gray-400');
+            activeBtn.classList.add('border-purple-500', 'text-white');
+            
+            renderJournals();
+        }
+        
+        function updateStatsDisplay() {
+            const stats = APP_STATE.stats;
+            document.getElementById('stat-journals').textContent = stats.total_journals || 0;
+            document.getElementById('stat-folders').textContent = stats.total_folders || 0;
+            document.getElementById('user-stats').textContent = `${stats.journals_this_week || 0} entries this week`;
+        }
+        
+        function renderFolders() {
+            const container = document.getElementById('folders-grid');
+            const createCard = container.querySelector('.create-card');
+            
+            // Clear existing folder cards
+            container.querySelectorAll('.folder-card:not(.create-card)').forEach(card => card.remove());
+            
+            APP_STATE.folders.forEach(folder => {
+                const folderCard = createFolderCard(folder);
+                container.appendChild(folderCard);
+            });
+        }
+        
+        function createFolderCard(folder) {
+            const card = document.createElement('div');
+            card.className = 'folder-card bg-gray-800 p-4 rounded-xl border border-gray-700 cursor-pointer transition-all hover:border-blue-500 h-32 flex flex-col justify-between';
+            card.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: ${folder.color}">
+                        <i data-lucide="folder" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <div class="text-xs text-gray-400">${folder.journal_count || 0} items</div>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-white text-sm truncate">${folder.name}</h3>
+                    <p class="text-xs text-gray-400 truncate">${folder.description || 'No description'}</p>
+                </div>
+            `;
+            
+            card.addEventListener('click', () => filterByFolder(folder.id));
+            
+            // Re-initialize icons for this card
+            lucide.createIcons({ nameAttr: 'data-lucide' });
+            
+            return card;
+        }
+        
+        function renderJournals() {
+            const container = document.getElementById('journals-grid');
+            const createCard = container.querySelector('.create-card');
+            
+            // Clear existing journal cards
+            container.querySelectorAll('.journal-card:not(.create-card)').forEach(card => card.remove());
+            
+            let filteredJournals = [...APP_STATE.journals];
+            
+            // Apply filters
+            if (APP_STATE.currentFilter === 'recent') {
+                const weekAgo = new Date();
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                filteredJournals = filteredJournals.filter(j => new Date(j.updated_at) > weekAgo);
+            } else if (APP_STATE.currentFilter === 'shared') {
+                filteredJournals = filteredJournals.filter(j => j.is_shared);
+            }
+            
+            filteredJournals.forEach(journal => {
+                const journalCard = createJournalCard(journal);
+                container.appendChild(journalCard);
+            });
+        }
+        
+        function createJournalCard(journal) {
+            const card = document.createElement('div');
+            card.className = 'journal-card bg-gray-800 p-6 rounded-xl border border-gray-700 cursor-pointer transition-all hover:border-blue-500 min-h-48 flex flex-col justify-between slide-in';
+            
+            // Format date
+            const date = new Date(journal.updated_at).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                year: 'numeric'
+            });
+            
+            // Truncate content
+            const content = journal.content.length > 120 ? 
+                journal.content.substring(0, 120) + '...' : 
+                journal.content;
+            
+            // Create tags HTML
+            const tagsHTML = journal.tags?.slice(0, 3).map(tag => 
+                `<span class="tag">${tag}</span>`
+            ).join('') || '';
+            
+            card.innerHTML = `
+                <div>
+                    <div class="flex justify-between items-start mb-3">
+                        <h3 class="font-bold text-white text-lg truncate flex-1">${journal.title}</h3>
+                        <div class="flex space-x-2 ml-2">
+                            ${journal.is_shared ? '<i data-lucide="share-2" class="w-4 h-4 text-blue-400"></i>' : ''}
+                            <i data-lucide="more-vertical" class="w-4 h-4 text-gray-400 hover:text-white cursor-pointer"></i>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">${content}</p>
+                    <div class="flex flex-wrap gap-1 mb-3">
+                        ${tagsHTML}
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-500">${date}</span>
+                    <div class="flex items-center space-x-2">
+                        ${journal.folder_name ? 
+                            `<span class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">${journal.folder_name}</span>` : 
+                            ''
+                        }
+                    </div>
+                </div>
+            `;
+            
+            card.addEventListener('click', () => editJournal(journal));
+            
+            // Re-initialize icons for this card
+            setTimeout(() => lucide.createIcons({ nameAttr: 'data-lucide' }), 0);
+            
+            return card;
+        }
+        
+        // ==================== MODAL FUNCTIONS ====================
+        
+        function openJournalModal(journal = null) {
+            const modal = document.getElementById('journal-modal');
+            const title = document.getElementById('journal-modal-title');
+            const folderSelect = document.getElementById('journal-folder');
+            
+            // Populate folder dropdown
+            folderSelect.innerHTML = '<option value="">No folder</option>';
+            APP_STATE.folders.forEach(folder => {
+                folderSelect.innerHTML += `<option value="${folder.id}">${folder.name}</option>`;
+            });
+            
+            if (journal && journal.id) {
+                title.textContent = 'Edit Journal';
+                document.getElementById('journal-title').value = journal.title || '';
+                document.getElementById('journal-content').value = journal.content || '';
+                document.getElementById('journal-tags').value = journal.tags?.join(', ') || '';
+                document.getElementById('journal-folder').value = journal.folder_id || '';
+                modal.dataset.journalId = journal.id;
+            } else {
+                title.textContent = 'Create New Journal';
+                document.getElementById('journal-title').value = '';
+                document.getElementById('journal-content').value = '';
+                document.getElementById('journal-tags').value = '';
+                document.getElementById('journal-folder').value = '';
+                delete modal.dataset.journalId;
+            }
+            
+            modal.classList.remove('hidden');
+            document.getElementById('journal-title').focus();
+        }
+        
+        function closeJournalModal() {
+            document.getElementById('journal-modal').classList.add('hidden');
+        }
+        
+        function openFolderModal() {
+            document.getElementById('folder-modal').classList.remove('hidden');
+            document.getElementById('folder-name').focus();
+        }
+        
+        function closeFolderModal() {
+            document.getElementById('folder-modal').classList.add('hidden');
+            document.getElementById('folder-name').value = '';
+            document.getElementById('folder-description').value = '';
+            selectFolderColor('#8A2BE2');
+        }
+        
+        function selectFolderColor(color) {
+            APP_STATE.selectedFolderColor = color;
+            document.querySelectorAll('.color-option').forEach(btn => {
+                btn.classList.remove('border-2');
+                btn.classList.add('border-2', 'border-transparent');
+            });
+            document.querySelector(`[data-color="${color}"]`).classList.remove('border-transparent');
+            document.querySelector(`[data-color="${color}"]`).classList.add(`border-2`, 'border-white');
+        }
+        
+        // ==================== SAVE FUNCTIONS ====================
+        
+        async function saveJournal() {
+            const modal = document.getElementById('journal-modal');
+            const title = document.getElementById('journal-title').value.trim();
+            const content = document.getElementById('journal-content').value.trim();
+            const tags = document.getElementById('journal-tags').value.split(',').map(t => t.trim()).filter(t => t);
+            const folderId = document.getElementById('journal-folder').value || null;
+            
+            if (!title || !content) {
+                showToast('Please enter both title and content', 'error');
+                return;
+            }
+            
+            try {
+                const journalId = modal.dataset.journalId;
+                
+                if (journalId && journalId !== 'undefined') {
+                    // Update existing journal
+                    await apiCall(`/journals/${journalId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ title, content, tags, folder_id: folderId })
+                    });
+                    showToast('Journal updated successfully!', 'success');
+                } else {
+                    // Create new journal
+                    await apiCall('/journals', {
+                        method: 'POST',
+                        body: JSON.stringify({ title, content, tags, folder_id: folderId })
+                    });
+                    showToast('Journal created successfully!', 'success');
+                }
+                
+                closeJournalModal();
+                await Promise.all([loadJournals(), loadStats()]);
+                
+            } catch (error) {
+                console.error('Failed to save journal:', error);
+                showToast('Failed to save journal', 'error');
+            }
+        }
+        
+        async function saveFolder() {
+            const name = document.getElementById('folder-name').value.trim();
+            const description = document.getElementById('folder-description').value.trim();
+            const color = APP_STATE.selectedFolderColor;
+            
+            if (!name) {
+                showToast('Please enter a folder name', 'error');
+                return;
+            }
+            
+            try {
+                await apiCall('/folders', {
+                    method: 'POST',
+                    body: JSON.stringify({ name, description, color })
+                });
+                
+                showToast('Folder created successfully!', 'success');
+                closeFolderModal();
+                await Promise.all([loadFolders(), loadStats()]);
+                
+            } catch (error) {
+                console.error('Failed to save folder:', error);
+            }
+        }
+        
+        // ==================== UTILITY FUNCTIONS ====================
+        
+        function editJournal(journal) {
+            console.log('Editing journal:', journal);
+            if (!journal || !journal.id) {
+                console.error('Journal is missing or has no ID:', journal);
+                showToast('Error: Cannot edit journal - missing data', 'error');
+                return;
+            }
+            openJournalModal(journal);
+        }
+        
+        function filterByFolder(folderId) {
+            // This would filter journals by folder
+            console.log('Filter by folder:', folderId);
+        }
+        
+        function handleGlobalSearch(event) {
+            const query = event.target.value.trim();
+            console.log('Global search:', query);
+            // Implement search functionality
+        }
+        
+        function sortJournals() {
+            const sortBy = document.getElementById('sort-journals').value;
+            APP_STATE.journals.sort((a, b) => {
+                if (sortBy === 'title') {
+                    return a.title.localeCompare(b.title);
+                } else {
+                    return new Date(b[sortBy]) - new Date(a[sortBy]);
+                }
+            });
+            renderJournals();
+        }
+        
+        function updateUI() {
+            updateStatsDisplay();
+            renderFolders();
+            renderJournals();
+        }
+        
+
+        
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="w-5 h-5"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Initialize icons and show
+            lucide.createIcons({ nameAttr: 'data-lucide' });
+            setTimeout(() => toast.classList.add('show'), 100);
+            
+            // Auto remove after 4 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+        
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // ==================== CHAT FUNCTIONALITY ====================
+        
+        // Generate unique session ID for conversation continuity
+        let CHAT_SESSION_ID = 'scoratis_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        let currentConversationId = null;
+        
+        function initializeChat() {
+            const chatInput = document.getElementById('chat-input');
+            const chatSend = document.getElementById('chat-send');
+            const quickPrompts = document.querySelectorAll('.quick-prompt');
+            const chatInputContainer = document.getElementById('chat-input-container');
+            const chatGlow = document.querySelector('.chat-glow');
+            
+            // Enhanced focus effects
+            chatInput.addEventListener('focus', () => {
+                chatGlow.classList.add('chat-input-focused');
+                chatInputContainer.classList.add('border-purple-500/70', 'shadow-purple-500/40');
+                chatInputContainer.classList.remove('border-purple-500/30');
+            });
+            
+            chatInput.addEventListener('blur', () => {
+                chatGlow.classList.remove('chat-input-focused');
+                chatInputContainer.classList.remove('border-purple-500/70', 'shadow-purple-500/40');
+                chatInputContainer.classList.add('border-purple-500/30');
+            });
+            
+            // Send message on Enter key
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // Send button click
+            chatSend.addEventListener('click', sendMessage);
+            
+            // Quick prompt buttons with enhanced effects
+            quickPrompts.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const prompt = btn.dataset.prompt;
+                    chatInput.value = prompt;
+                    chatInput.focus();
+                    
+                    // Add a little pulse effect
+                    btn.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        btn.style.transform = 'scale(1)';
+                    }, 150);
+                });
+            });
+            
+            // Auto-focus on chat input when view switches
+            const scoratisNav = document.getElementById('scoratis-nav');
+            scoratisNav.addEventListener('click', () => {
+                setTimeout(() => chatInput.focus(), 100);
+            });
+
+            // Clear conversation functionality
+            const clearChatBtn = document.getElementById('clear-chat');
+            clearChatBtn.addEventListener('click', clearConversation);
+            
+            // New chat button
+            const newChatBtn = document.getElementById('new-chat-btn');
+            newChatBtn.addEventListener('click', startNewConversation);
+            
+            // Refresh chats button
+            const refreshChatsBtn = document.getElementById('refresh-chats-btn');
+            refreshChatsBtn.addEventListener('click', () => {
+                console.log('Manual refresh clicked');
+                loadConversationHistory();
+            });
+            
+            // Empty trash button
+            const emptyTrashBtn = document.getElementById('empty-trash-btn');
+            emptyTrashBtn.addEventListener('click', emptyTrash);
+            
+            // Trash search
+            const trashSearch = document.getElementById('trash-search');
+            trashSearch.addEventListener('input', debounce(filterTrashConversations, 300));
+        }
+        
+        async function sendMessage() {
+            const chatInput = document.getElementById('chat-input');
+            const chatMessages = document.getElementById('chat-messages');
+            const typingIndicator = document.getElementById('typing-indicator');
+            const sendButton = document.getElementById('chat-send');
+            
+            const message = chatInput.value.trim();
+            if (!message) return;
+            
+            // Clear input and disable send button
+            chatInput.value = '';
+            sendButton.disabled = true;
+            
+            // Add user message to chat
+            addMessageToChat('user', message);
+            
+            // Show typing indicator
+            typingIndicator.classList.remove('hidden');
+            scrollToBottom();
+            
+            try {
+                // Send message to backend with session ID
+                const response = await apiCall('/chat', {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        message: message,
+                        session_id: CHAT_SESSION_ID 
+                    })
+                });
+                
+                // Hide typing indicator
+                typingIndicator.classList.add('hidden');
+                
+                // Add AI response to chat
+                addMessageToChat('ai', response.reply);
+                
+            } catch (error) {
+                console.error('Chat error:', error);
+                typingIndicator.classList.add('hidden');
+                addMessageToChat('ai', 'I apologize, but I encountered an error. Please try again.');
+                showToast('Failed to send message', 'error');
+            } finally {
+                // Re-enable send button and focus input
+                sendButton.disabled = false;
+                chatInput.focus();
+            }
+        }
+        
+        function addMessageToChat(sender, message, shouldScroll = true) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            
+            if (sender === 'user') {
+                messageDiv.innerHTML = `
+                    <div class="flex items-start space-x-3 justify-end">
+                        <div class="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl rounded-tr-md p-4 max-w-2xl">
+                            <p class="text-white">${escapeHtml(message)}</p>
+                        </div>
+                        <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="user" class="w-4 h-4 text-gray-300"></i>
+                        </div>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-white"></i>
+                        </div>
+                        <div class="bg-gray-800 rounded-2xl rounded-tl-md p-4 max-w-2xl">
+                            <p class="text-gray-300">${escapeHtml(message)}</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Add fade-in animation
+            messageDiv.className = 'opacity-0 transform translate-y-4 transition-all duration-300';
+            chatMessages.appendChild(messageDiv);
+            
+            // Re-initialize lucide icons
+            lucide.createIcons({ nameAttr: 'data-lucide' });
+            
+            // Trigger animation
+            setTimeout(() => {
+                messageDiv.className = 'opacity-100 transform translate-y-0 transition-all duration-300';
+            }, 50);
+            
+            if (shouldScroll) {
+                scrollToBottom();
+            }
+        }
+        
+        function scrollToBottom() {
+            const chatMessagesContainer = document.querySelector('#scoratis-view .overflow-y-auto');
+            setTimeout(() => {
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+            }, 100);
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function clearConversation() {
+            // This function is now the same as startNewConversation
+            // We don't actually "clear" conversations - we just start new ones
+            await startNewConversation();
+        }
+
+        // ==================== CONVERSATION HISTORY MANAGEMENT ====================
+
+        async function loadConversationHistory() {
+            try {
+                console.log('Loading conversation history...');
+                const response = await apiCall('/chat/history?limit=20');
+                console.log('Conversation history response:', response);
+                const conversations = response.conversations || [];
+                console.log('Found conversations:', conversations.length);
+                renderConversationList(conversations);
+            } catch (error) {
+                console.error('Failed to load conversation history:', error);
+                // Show empty state on error
+                renderConversationList([]);
+            }
+        }
+
+        function renderConversationList(conversations) {
+            const container = document.getElementById('conversation-list');
+            if (!container) {
+                console.error('Conversation list container not found');
+                return;
+            }
+            
+            container.innerHTML = '';
+            console.log('Rendering conversations:', conversations);
+
+            if (!conversations || conversations.length === 0) {
+                container.innerHTML = `
+                    <div class="text-gray-500 text-sm text-center py-4">
+                        No previous conversations
+                    </div>
+                `;
+                return;
+            }
+
+            conversations.forEach(conversation => {
+                try {
+                    const conversationItem = createConversationItem(conversation);
+                    container.appendChild(conversationItem);
+                } catch (error) {
+                    console.error('Error creating conversation item:', error, conversation);
+                }
+            });
+        }
+
+        function createConversationItem(conversation) {
+            const item = document.createElement('div');
+            const isActive = conversation.session_id === CHAT_SESSION_ID;
+            
+            // Format date
+            const date = new Date(conversation.updated_at).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric'
+            });
+            
+            // Create title (truncate if too long)
+            const title = conversation.title || 'New Conversation';
+            const truncatedTitle = title.length > 25 ? title.substring(0, 25) + '...' : title;
+            
+            item.className = `conversation-item p-3 rounded-lg cursor-pointer transition-all border ${
+                isActive 
+                    ? 'bg-purple-900/30 border-purple-500/50' 
+                    : 'bg-gray-800/50 border-gray-700 hover:bg-gray-700/50 hover:border-gray-600'
+            }`;
+            
+            item.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-sm font-medium text-white truncate">${escapeHtml(truncatedTitle)}</h4>
+                        <div class="flex items-center space-x-2 mt-1">
+                            <span class="text-xs text-gray-400">${date}</span>
+                            <span class="text-xs text-gray-500">•</span>
+                            <span class="text-xs text-gray-400">${conversation.message_count || 0} msgs</span>
+                        </div>
+                    </div>
+                    <button class="delete-conversation-btn text-gray-500 hover:text-red-400 transition-colors ml-2" 
+                            data-conversation-id="${conversation.id}" 
+                            data-session-id="${conversation.session_id}">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i>
+                    </button>
+                </div>
+            `;
+            
+            // Add click handler to load conversation
+            item.addEventListener('click', (e) => {
+                if (!e.target.closest('.delete-conversation-btn')) {
+                    loadConversation(conversation.session_id);
+                }
+            });
+            
+            // Add delete handler
+            const deleteBtn = item.querySelector('.delete-conversation-btn');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteConversation(conversation.id, conversation.session_id);
+            });
+            
+            // Re-initialize icons
+            setTimeout(() => lucide.createIcons({ nameAttr: 'data-lucide' }), 0);
+            
+            return item;
+        }
+
+        async function loadConversation(sessionId) {
+            try {
+                if (sessionId === CHAT_SESSION_ID) {
+                    return; // Already loaded
+                }
+                
+                // Get conversation messages
+                const response = await apiCall(`/chat/conversation/${sessionId}`);
+                const messages = response.messages || [];
+                
+                // Clear current chat
+                const chatMessages = document.getElementById('chat-messages');
+                chatMessages.innerHTML = '';
+                
+                // Load messages into chat
+                messages.forEach(message => {
+                    addMessageToChat(message.sender, message.message, false); // Don't scroll for each
+                });
+                
+                // Update current session ID
+                CHAT_SESSION_ID = sessionId;
+                currentConversationId = sessionId;
+                
+                // Refresh conversation list to update active state
+                loadConversationHistory();
+                
+                // Scroll to bottom
+                scrollToBottom();
+                
+                showToast('Conversation loaded!', 'success');
+                
+            } catch (error) {
+                console.error('Failed to load conversation:', error);
+                showToast('Failed to load conversation', 'error');
+            }
+        }
+
+        async function startNewConversation() {
+            try {
+                // Generate new session ID (this keeps old conversations intact)
+                CHAT_SESSION_ID = 'scoratis_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                currentConversationId = null;
+                
+                // Clear ONLY the UI chat display (not the database)
+                const chatMessages = document.getElementById('chat-messages');
+                chatMessages.innerHTML = `
+                    <!-- Welcome Message -->
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-white"></i>
+                        </div>
+                        <div class="bg-gray-800 rounded-2xl rounded-tl-md p-4 max-w-2xl">
+                            <p class="text-gray-300">Welcome to Scoratis AI! I'm here to help you with Socratic questioning, learning guidance, and deep reflection. What would you like to explore today?</p>
+                        </div>
+                    </div>
+                `;
+                
+                // Re-initialize lucide icons
+                lucide.createIcons({ nameAttr: 'data-lucide' });
+                
+                // Clear only the in-memory conversation for the backend (not database)
+                await apiCall('/chat/clear', {
+                    method: 'POST',
+                    body: JSON.stringify({ session_id: CHAT_SESSION_ID })
+                });
+                
+                // Focus input first
+                document.getElementById('chat-input').focus();
+                
+                // Refresh conversation list to show all previous conversations
+                setTimeout(() => {
+                    loadConversationHistory();
+                }, 200);
+                
+                showToast('New conversation started!', 'success');
+                
+            } catch (error) {
+                console.error('Failed to start new conversation:', error);
+                showToast('Error starting new conversation', 'error');
+            }
+        }
+
+        async function deleteConversation(conversationId, sessionId) {
+            if (!confirm('Are you sure you want to move this conversation to trash?')) {
+                return;
+            }
+            
+            try {
+                await apiCall(`/chat/conversation/${conversationId}`, { 
+                    method: 'DELETE',
+                    body: JSON.stringify({ permanent: false })
+                });
+                
+                // If we deleted the current conversation, start a new one
+                if (sessionId === CHAT_SESSION_ID) {
+                    await startNewConversation();
+                } else {
+                    // Just refresh the list
+                    loadConversationHistory();
+                }
+                
+                showToast('Conversation moved to trash', 'success');
+                
+            } catch (error) {
+                console.error('Failed to delete conversation:', error);
+                showToast('Failed to delete conversation', 'error');
+            }
+        }
+
+        async function loadTrashConversations() {
+            try {
+                console.log('Loading trash conversations...');
+                const response = await apiCall('/chat/trash?limit=50');
+                const conversations = response.conversations || [];
+                console.log('Found trash conversations:', conversations.length);
+                renderTrashConversations(conversations);
+            } catch (error) {
+                console.error('Failed to load trash conversations:', error);
+                renderTrashConversations([]);
+            }
+        }
+
+        function renderTrashConversations(conversations) {
+            const container = document.getElementById('trash-conversations');
+            const emptyState = document.getElementById('trash-empty-state');
+            
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            if (!conversations || conversations.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            
+            conversations.forEach(conversation => {
+                const trashItem = createTrashConversationItem(conversation);
+                container.appendChild(trashItem);
+            });
+        }
+
+        function createTrashConversationItem(conversation) {
+            const item = document.createElement('div');
+            
+            // Format dates
+            const deletedDate = new Date(conversation.deleted_at).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                year: 'numeric'
+            });
+            
+            const title = conversation.title || 'Untitled Conversation';
+            
+            item.className = 'bg-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-all';
+            
+            item.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-lg font-medium text-white truncate mb-2">${escapeHtml(title)}</h4>
+                        <div class="flex items-center space-x-4 text-sm text-gray-400">
+                            <span class="flex items-center space-x-1">
+                                <i data-lucide="message-circle" class="w-4 h-4"></i>
+                                <span>${conversation.message_count || 0} messages</span>
+                            </span>
+                            <span class="flex items-center space-x-1">
+                                <i data-lucide="calendar" class="w-4 h-4"></i>
+                                <span>Deleted ${deletedDate}</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 ml-4">
+                        <button class="restore-btn p-2 text-green-400 hover:text-green-300 hover:bg-green-400/10 rounded-lg transition-colors" 
+                                data-conversation-id="${conversation.id}" title="Restore">
+                            <i data-lucide="undo-2" class="w-4 h-4"></i>
+                        </button>
+                        <button class="permanent-delete-btn p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors" 
+                                data-conversation-id="${conversation.id}" title="Delete Forever">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Add event listeners
+            const restoreBtn = item.querySelector('.restore-btn');
+            const permanentDeleteBtn = item.querySelector('.permanent-delete-btn');
+            
+            restoreBtn.addEventListener('click', () => restoreConversation(conversation.id));
+            permanentDeleteBtn.addEventListener('click', () => permanentlyDeleteConversation(conversation.id));
+            
+            // Re-initialize icons
+            setTimeout(() => lucide.createIcons({ nameAttr: 'data-lucide' }), 0);
+            
+            return item;
+        }
+
+        async function restoreConversation(conversationId) {
+            try {
+                await apiCall(`/chat/conversation/${conversationId}/restore`, { method: 'POST' });
+                showToast('Conversation restored!', 'success');
+                loadTrashConversations();
+                // Also refresh main conversation list if on Scoratis view
+                if (APP_STATE.currentView === 'scoratis') {
+                    loadConversationHistory();
+                }
+            } catch (error) {
+                console.error('Failed to restore conversation:', error);
+                showToast('Failed to restore conversation', 'error');
+            }
+        }
+
+        async function permanentlyDeleteConversation(conversationId) {
+            if (!confirm('Are you sure you want to permanently delete this conversation? This action cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                await apiCall(`/chat/conversation/${conversationId}`, { 
+                    method: 'DELETE',
+                    body: JSON.stringify({ permanent: true })
+                });
+                showToast('Conversation permanently deleted', 'success');
+                loadTrashConversations();
+            } catch (error) {
+                console.error('Failed to permanently delete conversation:', error);
+                showToast('Failed to permanently delete conversation', 'error');
+            }
+        }
+
+        async function emptyTrash() {
+            if (!confirm('Are you sure you want to permanently delete ALL conversations in trash? This action cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                await apiCall('/chat/trash/empty', { method: 'POST' });
+                showToast('Trash emptied successfully', 'success');
+                loadTrashConversations();
+            } catch (error) {
+                console.error('Failed to empty trash:', error);
+                showToast('Failed to empty trash', 'error');
+            }
+        }
+
+        function filterTrashConversations() {
+            const searchTerm = document.getElementById('trash-search').value.toLowerCase();
+            const items = document.querySelectorAll('#trash-conversations > div');
+            
+            items.forEach(item => {
+                const title = item.querySelector('h4').textContent.toLowerCase();
+                if (title.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // ==================== USER PROFILE MENU ====================
+
+        let profileMenuInitialized = false;
+        
+        function initializeUserProfileMenu() {
+            if (profileMenuInitialized) {
+                console.log('🔧 User Profile Menu already initialized, skipping...');
+                return;
+            }
+            
+            console.log('🔧 Initializing User Profile Menu...');
+            const profileBtn = document.getElementById('user-profile-btn');
+            const dropdown = document.getElementById('user-menu-dropdown');
+            const chevron = document.getElementById('profile-chevron');
+            
+            console.log('Profile elements found:', {
+                profileBtn: !!profileBtn,
+                dropdown: !!dropdown,
+                chevron: !!chevron
+            });
+
+            // Toggle dropdown
+            if (profileBtn && dropdown && chevron) {
+                console.log('✅ Adding click listener to profile button');
+                profileBtn.addEventListener('click', (e) => {
+                    console.log('🖱️ Profile button clicked!');
+                    e.stopPropagation();
+                    const isHidden = dropdown.classList.contains('hidden');
+                    
+                    if (isHidden) {
+                        console.log('📂 Opening dropdown');
+                        dropdown.classList.remove('hidden');
+                        chevron.style.transform = 'rotate(180deg)';
+                    } else {
+                        console.log('📁 Closing dropdown');
+                        dropdown.classList.add('hidden');
+                        chevron.style.transform = 'rotate(0deg)';
+                    }
+                });
+            } else {
+                console.error('❌ Missing profile elements:', {
+                    profileBtn: !!profileBtn,
+                    dropdown: !!dropdown,
+                    chevron: !!chevron
+                });
+            }
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!profileBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                    chevron.style.transform = 'rotate(0deg)';
+                }
+            });
+
+            // Menu item handlers
+            const settingsBtn = document.getElementById('settings-btn');
+            const joinDiscordBtn = document.getElementById('join-discord-btn');
+            const referFriendBtn = document.getElementById('refer-friend-btn');
+            const sendFeedbackBtn = document.getElementById('send-feedback-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            if (settingsBtn) settingsBtn.addEventListener('click', openSettingsModal);
+            if (joinDiscordBtn) joinDiscordBtn.addEventListener('click', joinDiscord);
+            if (referFriendBtn) referFriendBtn.addEventListener('click', openReferModal);
+            if (sendFeedbackBtn) sendFeedbackBtn.addEventListener('click', openFeedbackModal);
+            if (logoutBtn) logoutBtn.addEventListener('click', logout);
+            
+            console.log('Menu item handlers added:', {
+                settings: !!settingsBtn,
+                discord: !!joinDiscordBtn,
+                refer: !!referFriendBtn,
+                feedback: !!sendFeedbackBtn,
+                logout: !!logoutBtn
+            });
+
+            // Modal handlers
+            initializeModals();
+            
+            profileMenuInitialized = true;
+            console.log('✅ User Profile Menu initialization complete!');
+        }
+
+        function initializeModals() {
+            // Settings Modal
+            const settingsModal = document.getElementById('settings-modal');
+            const closeSettingsBtn = document.getElementById('close-settings-modal');
+            const cancelSettingsBtn = document.getElementById('cancel-settings');
+            const saveSettingsBtn = document.getElementById('save-settings');
+
+            closeSettingsBtn.addEventListener('click', () => closeModal(settingsModal));
+            cancelSettingsBtn.addEventListener('click', () => closeModal(settingsModal));
+            saveSettingsBtn.addEventListener('click', saveSettings);
+
+            // Theme buttons
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.theme-btn').forEach(b => {
+                        b.classList.remove('border-purple-500', 'bg-gray-800');
+                        b.classList.add('border-gray-600', 'bg-gray-700');
+                    });
+                    btn.classList.remove('border-gray-600', 'bg-gray-700');
+                    btn.classList.add('border-purple-500', 'bg-gray-800');
+                });
+            });
+
+            // Feedback Modal
+            const feedbackModal = document.getElementById('feedback-modal');
+            const closeFeedbackBtn = document.getElementById('close-feedback-modal');
+            const cancelFeedbackBtn = document.getElementById('cancel-feedback');
+            const sendFeedbackBtn = document.getElementById('send-feedback');
+
+            closeFeedbackBtn.addEventListener('click', () => closeModal(feedbackModal));
+            cancelFeedbackBtn.addEventListener('click', () => closeModal(feedbackModal));
+            sendFeedbackBtn.addEventListener('click', sendFeedback);
+
+            // Refer Modal
+            const referModal = document.getElementById('refer-modal');
+            const closeReferBtn = document.getElementById('close-refer-modal');
+            const closeReferBtn2 = document.getElementById('close-refer');
+            const copyReferralBtn = document.getElementById('copy-referral');
+
+            closeReferBtn.addEventListener('click', () => closeModal(referModal));
+            closeReferBtn2.addEventListener('click', () => closeModal(referModal));
+            copyReferralBtn.addEventListener('click', copyReferralLink);
+        }
+
+        function openSettingsModal() {
+            document.getElementById('user-menu-dropdown').classList.add('hidden');
+            document.getElementById('profile-chevron').style.transform = 'rotate(0deg)';
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function openFeedbackModal() {
+            document.getElementById('user-menu-dropdown').classList.add('hidden');
+            document.getElementById('profile-chevron').style.transform = 'rotate(0deg)';
+            document.getElementById('feedback-modal').classList.remove('hidden');
+        }
+
+        function openReferModal() {
+            document.getElementById('user-menu-dropdown').classList.add('hidden');
+            document.getElementById('profile-chevron').style.transform = 'rotate(0deg)';
+            document.getElementById('refer-modal').classList.remove('hidden');
+        }
+
+        function closeModal(modal) {
+            modal.classList.add('hidden');
+        }
+
+        function joinDiscord() {
+            document.getElementById('user-menu-dropdown').classList.add('hidden');
+            document.getElementById('profile-chevron').style.transform = 'rotate(0deg)';
+            
+            // Open Discord invite link
+            window.open('https://discord.gg/scoratis', '_blank');
+            showToast('Opening Discord invite...', 'success');
+        }
+
+        function saveSettings() {
+            // Get selected theme
+            const selectedTheme = document.querySelector('.theme-btn.border-purple-500').dataset.theme;
+            
+            // Get form values
+            const language = document.querySelector('select').value;
+            const autoSave = document.querySelector('input[type="checkbox"]:nth-of-type(1)').checked;
+            const notifications = document.querySelector('input[type="checkbox"]:nth-of-type(2)').checked;
+            const analytics = document.querySelector('input[type="checkbox"]:nth-of-type(3)').checked;
+
+            // Save to localStorage (in a real app, this would be saved to the server)
+            const settings = {
+                theme: selectedTheme,
+                language: language,
+                autoSave: autoSave,
+                notifications: notifications,
+                analytics: analytics
+            };
+
+            localStorage.setItem('scoratis_settings', JSON.stringify(settings));
+            
+            closeModal(document.getElementById('settings-modal'));
+            showToast('Settings saved successfully!', 'success');
+        }
+
+        function sendFeedback() {
+            const type = document.getElementById('feedback-type').value;
+            const message = document.getElementById('feedback-message').value.trim();
+
+            if (!message) {
+                showToast('Please enter your feedback message', 'error');
+                return;
+            }
+
+            // In a real app, this would send the feedback to your server
+            console.log('Feedback:', { type, message });
+            
+            // Clear form
+            document.getElementById('feedback-message').value = '';
+            document.getElementById('feedback-type').value = 'bug';
+            
+            closeModal(document.getElementById('feedback-modal'));
+            showToast('Feedback sent! Thank you for your input.', 'success');
+        }
+
+        function copyReferralLink() {
+            const referralLink = document.getElementById('referral-link').value;
+            
+            navigator.clipboard.writeText(referralLink).then(() => {
+                showToast('Referral link copied to clipboard!', 'success');
+                
+                // Change button text briefly
+                const btn = document.getElementById('copy-referral');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i>';
+                lucide.createIcons({ nameAttr: 'data-lucide' });
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    lucide.createIcons({ nameAttr: 'data-lucide' });
+                }, 2000);
+            }).catch(() => {
+                showToast('Failed to copy link', 'error');
+            });
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                // Clear any stored data
+                localStorage.removeItem('scoratis_settings');
+                
+                // In a real app, you would:
+                // 1. Clear authentication tokens
+                // 2. Make a logout API call
+                // 3. Redirect to login page
+                
+                showToast('Logged out successfully', 'success');
+                
+                // For demo purposes, just reload the page
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            }
+        }
+
+        // Load saved settings on page load
+        function loadUserSettings() {
+            const savedSettings = localStorage.getItem('scoratis_settings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                
+                // Apply theme if needed
+                if (settings.theme && settings.theme !== 'dark') {
+                    console.log('Apply theme:', settings.theme);
+                    // Theme application logic would go here
+                }
+            }
+        }
+
+        // Initialize settings when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserSettings();
+        });
+
+        // Manual test function (can be called from browser console)
+        function testProfileButton() {
+            const profileBtn = document.getElementById('user-profile-btn');
+            const dropdown = document.getElementById('user-menu-dropdown');
+            const chevron = document.getElementById('profile-chevron');
+            
+            console.log('=== PROFILE BUTTON TEST ===');
+            console.log('Profile Button:', profileBtn);
+            console.log('Dropdown:', dropdown);
+            console.log('Chevron:', chevron);
+            
+            if (profileBtn) {
+                console.log('Button found, adding test click handler...');
+                profileBtn.onclick = function() {
+                    console.log('MANUAL CLICK HANDLER WORKING!');
+                    if (dropdown) {
+                        dropdown.classList.toggle('hidden');
+                        console.log('Dropdown toggled, hidden:', dropdown.classList.contains('hidden'));
+                    }
+                };
+            } else {
+                console.error('Profile button not found!');
+            }
+        }
+        
+        // Auto-run test after page load
+        window.addEventListener('load', () => {
+            setTimeout(testProfileButton, 1000);
+        });
+
+
+    </script>
+</body>
+</html>

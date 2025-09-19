@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoratis - OpenNote Clone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-violet: #8A2BE2;
+            --neon-blue: #00BFFF;
+            --bg-black: #0A0A0A;
+            --bg-sidebar: #121212;
+            --bg-card: #1A1A1A;
+            --border-color: #2D2D2D;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-black);
+            color: #E0E0E0;
+        }
+        .sidebar { background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); }
+        .main-content { background-color: var(--bg-black); }
+        .nav-link.active { background-color: var(--bg-card); color: white; box-shadow: inset 2px 0 0 0 var(--neon-violet); }
+        .nav-link:hover { background-color: var(--bg-card); }
+        .focus-ring-violet:focus { outline: 2px solid var(--neon-violet); border-color: var(--neon-violet); }
+        .glow-violet { box-shadow: 0 0 15px -3px rgba(138, 43, 226, 0.5); }
+        .chat-input-glow:focus-within { border-color: var(--neon-violet); box-shadow: 0 0 25px -5px rgba(138, 43, 226, 0.6); }
+        .glow-blue { box-shadow: 0 0 15px -3px rgba(0, 191, 255, 0.4); }
+        .journal-card:hover, .video-card:hover { border-color: var(--neon-blue); transform: translateY(-2px); }
+        .chat-container::-webkit-scrollbar, .main-content::-webkit-scrollbar { width: 6px; }
+        .chat-container::-webkit-scrollbar-thumb, .main-content::-webkit-scrollbar-thumb { background-color: #4A4A4A; border-radius: 3px; }
+        .chat-container::-webkit-scrollbar-track, .main-content::-webkit-scrollbar-track { background: transparent; }
+        /* Video grid styles */
+        .video-grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+        @media (max-width: 768px) { .video-grid-container { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); } }
+        @media (max-width: 480px) { .video-grid-container { grid-template-columns: 1fr; } }
+        /* Responsive video container */
+        .video-container { position: relative; padding-bottom: 56.25%; /* 16:9 */ height: 0; overflow: hidden; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    </style>
+</head>
+<body class="text-gray-300">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="sidebar w-64 flex-shrink-0 flex flex-col p-4 space-y-4">
+            <div class="flex items-center space-x-2">
+                 <div class="w-8 h-8 rounded-full bg-[var(--neon-violet)] flex items-center justify-center text-black font-bold text-lg">L</div>
+                <h1 class="text-lg font-semibold text-white">Hi, Lenin</h1>
+                <button class="ml-auto text-gray-400 hover:text-white p-1 rounded-full hover:bg-[var(--bg-card)]">+</button>
+            </div>
+            <div class="relative">
+                <input type="text" placeholder="Search journals..." class="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--neon-violet)]">
+                 <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
+            <nav class="space-y-1">
+                <a href="#" id="scoratis-nav" class="nav-link flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-400 transition-all">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9v-2h2v2zm0-4H9V7h2v5zm4 4h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
+                    <span class="font-medium">Scoratis</span>
+                </a>
+                <a href="#" id="home-nav" class="nav-link active flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-400 transition-all">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                    <span class="font-medium">Home</span>
+                </a>
+                <a href="#" id="vault-nav" class="nav-link flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-400 transition-all">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0-2-.9-2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10-4h2v2h-2zm-4 0h2v2h-2z"/></svg>
+                    <span class="font-medium">Video Vault</span>
+                </a>
+                <a href="#" class="nav-link flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-400 transition-all">
+                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                    <span class="font-medium">Inbox</span>
+                </a>
+            </nav>
+            <div class="flex-grow"></div>
+            <div class="space-y-2">
+                <button class="w-full text-white font-semibold py-2 rounded-lg bg-[var(--neon-violet)] glow-violet hover:opacity-90 transition-opacity">Upgrade</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content flex-1 flex flex-col items-center overflow-y-auto">
+            <!-- Home View -->
+            <div id="home-view" class="w-full h-full p-8 max-w-7xl">
+                <h1 class="text-3xl font-bold text-white mb-6">Home</h1>
+                <div class="flex space-x-4 mb-8 border-b border-[var(--border-color)]">
+                    <button class="filter-btn pb-2 border-b-2 border-[var(--neon-violet)] text-white" data-filter="all">All</button>
+                    <button class="filter-btn pb-2 text-gray-400" data-filter="shared">Shared with you</button>
+                    <button class="filter-btn pb-2 text-gray-400" data-filter="owned">Owned by you</button>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold text-white mb-4">Folders</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                        <div id="create-folder-card" class="flex flex-col items-center justify-center p-6 bg-[var(--bg-card)] border-2 border-dashed border-[var(--border-color)] rounded-xl text-gray-400 hover:border-[var(--neon-blue)] hover:text-white cursor-pointer transition-all">
+                             <svg class="w-10 h-10 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h5l2 3h9a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
+                            <span>Create folder</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-10">
+                    <h2 class="text-xl font-semibold text-white mb-4">Journals</h2>
+                    <div id="journals-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                         <div id="create-journal-card" class="flex flex-col items-center justify-center p-6 bg-[var(--bg-card)] border-2 border-dashed border-[var(--border-color)] rounded-xl text-gray-400 hover:border-[var(--neon-blue)] hover:text-white cursor-pointer transition-all">
+                            <svg class="w-10 h-10 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <span>Create journal</span>
+                        </div>
+                        <!-- Journal cards will be inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Journal Creation Modal -->
+            <div id="journal-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+                <div class="bg-[var(--bg-card)] rounded-xl w-full max-w-2xl mx-4 border border-[var(--border-color)]">
+                    <div class="p-4 border-b border-[var(--border-color)] flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-white">Create New Journal</h3>
+                        <button id="close-journal-modal" class="text-gray-400 hover:text-white">
+                            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <label class="block text-gray-300 text-sm font-medium mb-2" for="journal-title">
+                                Title
+                            </label>
+                            <input id="journal-title" type="text" class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-[var(--neon-violet)]" placeholder="Enter journal title">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-300 text-sm font-medium mb-2" for="journal-content">
+                                Content
+                            </label>
+                            <textarea id="journal-content" rows="6" class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-[var(--neon-violet)]" placeholder="Write your journal content here..."></textarea>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-gray-300 text-sm font-medium mb-2" for="journal-tags">
+                                Tags (comma separated)
+                            </label>
+                            <input id="journal-tags" type="text" class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-[var(--neon-violet)]" placeholder="science, learning, notes">
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button id="cancel-journal" class="px-4 py-2 text-gray-300 hover:text-white rounded-lg border border-[var(--border-color)] hover:border-[var(--neon-blue)] transition-colors">
+                                Cancel
+                            </button>
+                            <button id="save-journal" class="px-4 py-2 bg-[var(--neon-violet)] text-white rounded-lg hover:opacity-90 transition-opacity">
+                                Create Journal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Folder Creation Modal -->
+            <div id="folder-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+                <div class="bg-[var(--bg-card)] rounded-xl w-full max-w-md mx-4 border border-[var(--border-color)]">
+                    <div class="p-4 border-b border-[var(--border-color)] flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-white">Create New Folder</h3>
+                        <button id="close-folder-modal" class="text-gray-400 hover:text-white">
+                            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <label class="block text-gray-300 text-sm font-medium mb-2" for="folder-name">
+                                Folder Name
+                            </label>
+                            <input id="folder-name" type="text" class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-[var(--neon-violet)]" placeholder="Enter folder name">
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button id="cancel-folder" class="px-4 py-2 text-gray-300 hover:text-white rounded-lg border border-[var(--border-color)] hover:border-[var(--neon-blue)] transition-colors">
+                                Cancel
+                            </button>
+                            <button id="save-folder" class="px-4 py-2 bg-[var(--neon-violet)] text-white rounded-lg hover:opacity-90 transition-opacity">
+                                Create Folder
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Vault View -->
+            <div id="vault-view" class="w-full h-full p-8 max-w-7xl hidden">
+                <h1 class="text-3xl font-bold text-white">Video Vault</h1>
+                <p class="text-gray-400 mt-1 mb-8">Watch thousands of videos generated by the Opennote community to help you learn.</p>
+                <div class="relative mb-6">
+                    <input type="text" id="video-search-input" placeholder="Search videos and press Enter..." class="w-full bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--neon-violet)]">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </div>
+                <div id="video-grid-loader" class="text-center text-gray-400 py-10">Loading videos...</div>
+                <div id="video-grid" class="video-grid-container hidden">
+                    <!-- Video cards will be inserted here by JavaScript -->
+                </div>
+                <div id="video-detail-view" class="hidden">
+                    <button id="back-to-grid" class="mb-4 px-4 py-2 bg-[var(--bg-card)] text-white rounded-lg hover:bg-[var(--neon-violet)] transition-colors">
+                        ← Back to Videos
+                    </button>
+                    <div id="video-detail-container" class="rounded-xl overflow-hidden">
+                        <!-- Detailed video view will be inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scoratis Chat View -->
+            <div id="scoratis-view" class="w-full max-w-4xl h-full flex-col p-6 items-center hidden">
+                <div id="chat-container" class="chat-container flex-1 w-full overflow-y-auto p-4 space-y-4">
+                    <div id="welcome-message" class="text-center py-10">
+                        <h1 class="text-5xl font-bold text-white">Scoratis</h1>
+                        <p class="mt-2 text-gray-400">Your AI assistant for journaling and discovery.</p>
+                    </div>
+                </div>
+                <div class="w-full pt-4">
+                    <div class="flex justify-center items-center gap-2 mb-3">
+                        <button id="api-btn" class="model-selector text-xs px-3 py-1 rounded-full bg-[var(--neon-violet)] text-white font-semibold">API Model</button>
+                        <button id="local-btn" class="model-selector text-xs px-3 py-1 rounded-full bg-[var(--bg-card)]">Local LLM</button>
+                    </div>
+                    <div class="relative bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl shadow-lg transition-all duration-300 chat-input-glow">
+                        <textarea id="chat-input" placeholder="Ask Scoratis anything..." class="w-full bg-transparent text-gray-200 rounded-xl p-4 pr-16 resize-none focus:outline-none" rows="1"></textarea>
+                        <button id="send-btn" class="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-[var(--neon-violet)] text-white hover:opacity-90 transition-opacity disabled:bg-gray-600">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const vaultNav = document.getElementById('vault-nav');
+            const vaultView = document.getElementById('vault-view');
+            const homeNav = document.getElementById('home-nav');
+            const homeView = document.getElementById('home-view');
+            const scoratisNav = document.getElementById('scoratis-nav');
+            const scoratisView = document.getElementById('scoratis-view');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const chatInput = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('send-btn');
+            const chatContainer = document.getElementById('chat-container');
+            const welcomeMessage = document.getElementById('welcome-message');
+            const videoSearchInput = document.getElementById('video-search-input');
+            
+            // Journal elements
+            const createJournalCard = document.getElementById('create-journal-card');
+            const journalModal = document.getElementById('journal-modal');
+            const closeJournalModal = document.getElementById('close-journal-modal');
+            const cancelJournal = document.getElementById('cancel-journal');
+            const saveJournal = document.getElementById('save-journal');
+            const journalsContainer = document.getElementById('journals-container');
+            
+            // Folder elements
+            const createFolderCard = document.getElementById('create-folder-card');
+            const folderModal = document.getElementById('folder-modal');
+            const closeFolderModal = document.getElementById('close-folder-modal');
+            const cancelFolder = document.getElementById('cancel-folder');
+            const saveFolder = document.getElementById('save-folder');
+            
+            // Filter elements
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            
+            let chatIsLoading = false;
+            let initialVideosLoaded = false;
+            let currentVideos = []; // Store current videos for detail view
+            let currentFilter = 'all';
+
+            // Initialize journals and folders from localStorage
+            let journals = JSON.parse(localStorage.getItem('journals')) || [];
+            let folders = JSON.parse(localStorage.getItem('folders')) || [];
+            
+            const switchView = (targetView) => {
+                homeView.classList.add('hidden');
+                scoratisView.classList.add('hidden');
+                scoratisView.classList.remove('flex');
+                vaultView.classList.add('hidden');
+                navLinks.forEach(link => link.classList.remove('active'));
+
+                if (targetView === 'scoratis') {
+                    scoratisView.classList.remove('hidden');
+                    scoratisView.classList.add('flex');
+                    scoratisNav.classList.add('active');
+                } else if (targetView === 'vault') {
+                    vaultView.classList.remove('hidden');
+                    vaultNav.classList.add('active');
+                    if (!initialVideosLoaded) {
+                        fetchAndDisplayVideos(); // Fetch default videos on first load
+                        initialVideosLoaded = true;
+                    }
+                } else {
+                    homeView.classList.remove('hidden');
+                    homeNav.classList.add('active');
+                    renderJournals(); // Render journals when switching to home view
+                }
+            };
+
+            // Journal functionality
+            const openJournalModal = () => {
+                journalModal.classList.remove('hidden');
+            };
+
+            const closeJournalModalFunc = () => {
+                journalModal.classList.add('hidden');
+                document.getElementById('journal-title').value = '';
+                document.getElementById('journal-content').value = '';
+                document.getElementById('journal-tags').value = '';
+            };
+
+            const saveJournalFunc = () => {
+                const title = document.getElementById('journal-title').value.trim();
+                const content = document.getElementById('journal-content').value.trim();
+                const tags = document.getElementById('journal-tags').value.trim();
+                
+                if (!title || !content) {
+                    alert('Please enter both title and content for your journal.');
+                    return;
+                }
+                
+                const newJournal = {
+                    id: Date.now(),
+                    title,
+                    content,
+                    tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+                    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                    owner: 'Lenin',
+                    shared: false
+                };
+                
+                journals.unshift(newJournal);
+                localStorage.setItem('journals', JSON.stringify(journals));
+                closeJournalModalFunc();
+                renderJournals();
+            };
+
+            // Folder functionality
+            const openFolderModal = () => {
+                folderModal.classList.remove('hidden');
+            };
+
+            const closeFolderModalFunc = () => {
+                folderModal.classList.add('hidden');
+                document.getElementById('folder-name').value = '';
+            };
+
+            const saveFolderFunc = () => {
+                const name = document.getElementById('folder-name').value.trim();
+                
+                if (!name) {
+                    alert('Please enter a folder name.');
+                    return;
+                }
+                
+                const newFolder = {
+                    id: Date.now(),
+                    name,
+                    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                    owner: 'Lenin'
+                };
+                
+                folders.unshift(newFolder);
+                localStorage.setItem('folders', JSON.stringify(folders));
+                closeFolderModalFunc();
+                // For now, we'll just show an alert since folder UI isn't fully implemented
+                alert(`Folder "${name}" created successfully!`);
+            };
+
+            // Render journals based on current filter
+            const renderJournals = () => {
+                // Clear existing journals except the create card
+                const journalCards = document.querySelectorAll('.journal-card');
+                journalCards.forEach(card => card.remove());
+                
+                // Filter journals based on current filter
+                let filteredJournals = journals;
+                if (currentFilter === 'shared') {
+                    filteredJournals = journals.filter(journal => journal.shared);
+                } else if (currentFilter === 'owned') {
+                    filteredJournals = journals.filter(journal => !journal.shared);
+                }
+                
+                // Render journals
+                filteredJournals.forEach(journal => {
+                    const journalCard = document.createElement('div');
+                    journalCard.className = 'journal-card bg-[var(--bg-card)] p-6 rounded-xl border border-[var(--border-color)] transition-all glow-blue';
+                    journalCard.innerHTML = `
+                        <h3 class="font-bold text-white text-lg truncate">${journal.title}</h3>
+                        <p class="text-gray-400 text-sm mt-2 mb-4">${journal.content.substring(0, 100)}${journal.content.length > 100 ? '...' : ''}</p>
+                        <div class="flex flex-wrap gap-1 mb-3">
+                            ${journal.tags.map(tag => `<span class="px-2 py-1 bg-[var(--bg-sidebar)] text-xs rounded">${tag}</span>`).join('')}
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-gray-500">${journal.date}</span>
+                            <div class="flex items-center space-x-2">
+                                ${journal.shared ? '<span class="text-xs text-[var(--neon-blue)]">Shared</span>' : ''}
+                                <button class="share-btn text-xs text-gray-400 hover:text-[var(--neon-blue)]" data-id="${journal.id}">
+                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    journalsContainer.appendChild(journalCard);
+                });
+                
+                // Add event listeners to share buttons
+                document.querySelectorAll('.share-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const journalId = parseInt(button.dataset.id);
+                        shareJournal(journalId);
+                    });
+                });
+            };
+
+            // Share journal functionality
+            const shareJournal = (journalId) => {
+                const journal = journals.find(j => j.id === journalId);
+                if (journal) {
+                    // In a real app, this would open a share dialog with options
+                    // For now, we'll just toggle the shared status
+                    journal.shared = !journal.shared;
+                    localStorage.setItem('journals', JSON.stringify(journals));
+                    renderJournals();
+                    
+                    // Show a simple notification
+                    const notification = document.createElement('div');
+                    notification.className = 'fixed top-4 right-4 bg-[var(--bg-card)] border border-[var(--neon-blue)] text-white px-4 py-2 rounded-lg shadow-lg z-50';
+                    notification.innerHTML = journal.shared 
+                        ? `<span>Journal shared successfully!</span>` 
+                        : `<span>Journal sharing removed.</span>`;
+                    document.body.appendChild(notification);
+                    
+                    // Remove notification after 3 seconds
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 3000);
+                }
+            };
+
+            // Filter functionality
+            const setFilter = (filter) => {
+                currentFilter = filter;
+                
+                // Update button styles
+                filterButtons.forEach(btn => {
+                    if (btn.dataset.filter === filter) {
+                        btn.classList.remove('text-gray-400');
+                        btn.classList.add('text-white', 'border-[var(--neon-violet)]');
+                        btn.style.borderBottom = '2px solid var(--neon-violet)';
+                    } else {
+                        btn.classList.remove('text-white', 'border-[var(--neon-violet)]');
+                        btn.classList.add('text-gray-400');
+                        btn.style.borderBottom = 'none';
+                    }
+                });
+                
+                renderJournals();
+            };
+
+            // Event listeners for navigation
+            homeNav.addEventListener('click', (e) => { e.preventDefault(); switchView('home'); });
+            scoratisNav.addEventListener('click', (e) => { e.preventDefault(); switchView('scoratis'); });
+            vaultNav.addEventListener('click', (e) => { e.preventDefault(); switchView('vault'); });
+            
+            // Event listeners for journal creation
+            createJournalCard.addEventListener('click', openJournalModal);
+            closeJournalModal.addEventListener('click', closeJournalModalFunc);
+            cancelJournal.addEventListener('click', closeJournalModalFunc);
+            saveJournal.addEventListener('click', saveJournalFunc);
+            
+            // Event listeners for folder creation
+            createFolderCard.addEventListener('click', openFolderModal);
+            closeFolderModal.addEventListener('click', closeFolderModalFunc);
+            cancelFolder.addEventListener('click', closeFolderModalFunc);
+            saveFolder.addEventListener('click', saveFolderFunc);
+            
+            // Event listeners for filtering
+            filterButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    setFilter(button.dataset.filter);
+                });
+            });
+            
+            const fetchAndDisplayVideos = async (query = '') => {
+                const videoGrid = document.getElementById('video-grid');
+                const loader = document.getElementById('video-grid-loader');
+                
+                loader.classList.remove('hidden');
+                videoGrid.classList.add('hidden');
+                videoGrid.innerHTML = ''; // Clear previous results
+                loader.innerText = `Loading videos for "${query || 'educational science'}"...`;
+
+                try {
+                    // Append query to URL if it exists
+                    const url = `http://127.0.0.1:5001/get_videos?q=${encodeURIComponent(query)}`;
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error('Failed to fetch videos');
+                    
+                    const videos = await response.json();
+                    
+                    if (videos.length === 0) {
+                        loader.innerText = `No videos found for "${query}"`;
+                        return;
+                    }
+
+                    videos.forEach((video, index) => {
+                        // Extract video ID from URL suffix
+                        const videoId = video.url_suffix.split('v=')[1];
+                        const videoCard = `
+                            <div class="video-card bg-[var(--bg-card)] rounded-xl border border-[var(--border-color)] transition-all overflow-hidden cursor-pointer" data-video-index="${index}">
+                                <div class="relative pt-[56.25%]"> <!-- 16:9 Aspect Ratio -->
+                                    <iframe 
+                                        src="https://www.youtube.com/embed/${videoId}" 
+                                        class="absolute top-0 left-0 w-full h-full rounded-t-xl"
+                                        frameborder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowfullscreen
+                                        loading="lazy">
+                                    </iframe>
+                                </div>
+                                <div class="p-4">
+                                    <h3 class="font-bold text-white text-md truncate">${video.title}</h3>
+                                    <p class="text-gray-400 text-sm mt-1">${video.channel}</p>
+                                </div>
+                            </div>
+                        `;
+                        videoGrid.innerHTML += videoCard;
+                    });
+                    
+                    // Store videos for detail view
+                    currentVideos = videos;
+                    
+                    // Add click handlers to video cards
+                    document.querySelectorAll('.video-card').forEach(card => {
+                        card.addEventListener('click', (e) => {
+                            const index = parseInt(card.getAttribute('data-video-index'));
+                            showVideoDetail(currentVideos[index]);
+                        });
+                    });
+                    
+                } catch (error) {
+                    console.error("Error fetching videos:", error);
+                    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+                        loader.innerHTML = `
+                            <p class="font-semibold text-red-400">Connection Error</p>
+                            <p class="text-sm mt-2">Could not connect to the backend server.</p>
+                            <p class="text-xs mt-1 text-gray-500">Please ensure the Python server (main.py) is running in your terminal.</p>
+                        `;
+                    } else {
+                        loader.innerText = 'Could not load videos. Please try again later.';
+                    }
+                } finally {
+                    if (videoGrid.innerHTML !== '') {
+                        loader.classList.add('hidden');
+                        videoGrid.classList.remove('hidden');
+                    } else {
+                        loader.classList.remove('hidden');
+                    }
+                }
+            };
+
+            videoSearchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const query = videoSearchInput.value.trim();
+                    fetchAndDisplayVideos(query);
+                }
+            });
+
+            // Function to show detailed video view
+            const showVideoDetail = (video) => {
+                const videoId = video.url_suffix.split('v=')[1];
+                const videoGrid = document.getElementById('video-grid');
+                const videoDetailView = document.getElementById('video-detail-view');
+                const videoDetailContainer = document.getElementById('video-detail-container');
+                
+                videoDetailContainer.innerHTML = `
+                    <div class="relative pt-[56.25%]"> <!-- 16:9 Aspect Ratio -->
+                        <iframe 
+                            src="https://www.youtube.com/embed/${videoId}?autoplay=1" 
+                            class="absolute top-0 left-0 w-full h-full rounded-t-xl"
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                    <div class="bg-[var(--bg-card)] p-6">
+                        <h2 class="font-bold text-white text-xl mb-2">${video.title}</h2>
+                        <p class="text-gray-400 mb-4">${video.channel}</p>
+                        <p class="text-gray-300">Click on the video to play/pause. Use the back button to return to the video grid.</p>
+                    </div>
+                `;
+                
+                videoGrid.classList.add('hidden');
+                videoDetailView.classList.remove('hidden');
+            };
+
+            // Back to grid button event listener
+            document.getElementById('back-to-grid').addEventListener('click', () => {
+                document.getElementById('video-grid').classList.remove('hidden');
+                document.getElementById('video-detail-view').classList.add('hidden');
+            });
+
+            // Initialize with existing journals
+            renderJournals();
+            
+
+
+            // --- Chatbot Logic ---
+            const autoResizeTextarea = () => {
+                chatInput.style.height = 'auto';
+                chatInput.style.height = (chatInput.scrollHeight) + 'px';
+            };
+            chatInput.addEventListener('input', autoResizeTextarea);
+            const addMessage = (message, sender) => {
+                const loadingMessage = chatContainer.querySelector('.loading-message');
+                if (loadingMessage) loadingMessage.remove();
+                if (welcomeMessage && welcomeMessage.parentElement) welcomeMessage.remove();
+                const messageElement = document.createElement('div');
+                messageElement.className = `w-full flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+                const bubbleClass = sender === 'user' ? 'bg-[var(--neon-violet)] text-white' : 'bg-[var(--bg-card)] text-gray-200';
+                messageElement.innerHTML = `<div class="max-w-xl p-3 rounded-lg ${bubbleClass}"><p class="text-sm">${message.replace(/\n/g, '<br>')}</p></div>`;
+                chatContainer.appendChild(messageElement);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            };
+            const showLoadingIndicator = () => {
+                const loadingElement = document.createElement('div');
+                loadingElement.className = 'w-full flex justify-start loading-message';
+                loadingElement.innerHTML = `<div class="max-w-xl p-3 rounded-lg bg-[var(--bg-card)] text-gray-200"><div class="flex items-center space-x-2"><div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div><div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div><div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.4s;"></div></div></div>`;
+                chatContainer.appendChild(loadingElement);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            };
+            const callApi = async (message) => {
+                chatIsLoading = true;
+                sendBtn.disabled = true;
+                showLoadingIndicator();
+                const backendUrl = 'http://127.0.0.1:5001/chat';
+                try {
+                    const response = await fetch(backendUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: message })
+                    });
+                    if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
+                    const result = await response.json();
+                    if (result.reply) { addMessage(result.reply, 'bot'); } 
+                    else { addMessage('I seem to be at a loss for words. Could you try rephrasing?', 'bot'); }
+                } catch (error) {
+                    console.error('Error connecting to backend:', error);
+                    addMessage('My apologies, I am having trouble connecting right now. Please try again in a moment.', 'bot');
+                } finally {
+                     chatIsLoading = false;
+                     sendBtn.disabled = false;
+                }
+            };
+            const handleSend = () => {
+                if (chatIsLoading) return;
+                const message = chatInput.value.trim();
+                if (message) {
+                    addMessage(message, 'user');
+                    chatInput.value = '';
+                    autoResizeTextarea();
+                    callApi(message);
+                }
+            };
+            sendBtn.addEventListener('click', handleSend);
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
